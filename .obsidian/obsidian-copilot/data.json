@@ -1,0 +1,30 @@
+{
+  "activeModel": "gemma-4-e4b-it-8bit",
+  "activeEmbeddingModel": "bge-m3-mlx-4bit",
+  "defaultSaveFolder": "90-System/copilot-conversations",
+  "chatModels": [
+    {
+      "name": "gemma-4-e4b-it-8bit",
+      "provider": "openai",
+      "baseUrl": "http://127.0.0.1:8000/v1",
+      "apiKey": "sk-bPua3CuOxS5iBIvmPmUEGLSp5klYMJEiW36AloW8Te",
+      "modelName": "gemma-4-e4b-it-8bit",
+      "enabled": true
+    }
+  ],
+  "embeddingModels": [
+    {
+      "name": "bge-m3-mlx-4bit",
+      "provider": "openai",
+      "baseUrl": "http://127.0.0.1:8000/v1",
+      "apiKey": "sk-bPua3CuOxS5iBIvmPmUEGLSp5klYMJEiW36AloW8Te",
+      "modelName": "bge-m3-mlx-4bit",
+      "enabled": true
+    }
+  ],
+  "vaultQA": {
+    "enabled": true,
+    "chatModel": "gemma-4-e4b-it-8bit",
+    "embeddingModel": "bge-m3-mlx-4bit"
+  }
+}

@@ -1,0 +1,23 @@
+# Obsidian 配置缓存
+.obsidian/workspace.json
+.obsidian/workspace-mobile.json
+.obsidian/plugins/*/data.json
+
+# Smart Connections 缓存
+.smart-env/
+
+# Copilot 对话记录
+copilot/
+
+# 敏感配置（含 API 密钥）
+90-System/config.json
+
+# 系统日志
+90-System/organize.log
+
+# Python
+__pycache__/
+*.pyc
+
+# macOS
+.DS_Store
