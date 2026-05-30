@@ -26,6 +26,7 @@ def load_config():
 
 
 _config = load_config()
+PROVIDER = _config["llm"].get("provider", "openai")
 API_URL = _config["llm"]["api_url"]
 API_KEY = _config["llm"]["api_key"]
 MODEL = _config["llm"]["model"]
@@ -112,25 +113,48 @@ def build_frontmatter(fm_dict):
 
 
 def call_llm(prompt):
-    """调用本地 LLM API"""
-    payload = json.dumps({
-        "model": MODEL,
-        "messages": [{"role": "user", "content": prompt}],
-        "temperature": 0.1,
-        "max_tokens": 1000,
-    }).encode("utf-8")
+    """调用 LLM API，支持 OpenAI 和 Anthropic 格式"""
+    if PROVIDER == "anthropic":
+        # Anthropic 格式: /v1/messages
+        payload = json.dumps({
+            "model": MODEL,
+            "messages": [{"role": "user", "content": prompt}],
+            "temperature": 0.1,
+            "max_tokens": 1000,
+        }).encode("utf-8")
 
-    req = urllib.request.Request(
-        API_URL,
-        data=payload,
-        headers={
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {API_KEY}",
-        },
-    )
-    with urllib.request.urlopen(req, timeout=60) as resp:
-        result = json.loads(resp.read().decode("utf-8"))
-    return result["choices"][0]["message"]["content"]
+        req = urllib.request.Request(
+            API_URL,
+            data=payload,
+            headers={
+                "Content-Type": "application/json",
+                "x-api-key": API_KEY,
+                "anthropic-version": "2023-06-01",
+            },
+        )
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            result = json.loads(resp.read().decode("utf-8"))
+        return result["content"][0]["text"]
+    else:
+        # OpenAI 格式: /v1/chat/completions
+        payload = json.dumps({
+            "model": MODEL,
+            "messages": [{"role": "user", "content": prompt}],
+            "temperature": 0.1,
+            "max_tokens": 1000,
+        }).encode("utf-8")
+
+        req = urllib.request.Request(
+            API_URL,
+            data=payload,
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {API_KEY}",
+            },
+        )
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            result = json.loads(resp.read().decode("utf-8"))
+        return result["choices"][0]["message"]["content"]
 
 
 def parse_llm_response(text):
