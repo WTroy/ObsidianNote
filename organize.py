@@ -31,6 +31,32 @@ API_URL = _config["llm"]["api_url"]
 API_KEY = _config["llm"]["api_key"]
 MODEL = _config["llm"]["model"]
 
+# 自动补全 API 路径
+def _normalize_api_url(url, provider):
+    """根据 provider 自动补全完整的 API 路径"""
+    url = url.rstrip("/")
+
+    if provider == "anthropic":
+        # Anthropic: 需要 /v1/messages
+        if not url.endswith("/messages"):
+            if url.endswith("/v1"):
+                url += "/messages"
+            else:
+                url += "/v1/messages"
+    else:
+        # OpenAI: 需要 /v1/chat/completions
+        if not url.endswith("/completions"):
+            if url.endswith("/v1"):
+                url += "/chat/completions"
+            elif url.endswith("/chat"):
+                url += "/completions"
+            else:
+                url += "/v1/chat/completions"
+
+    return url
+
+API_URL = _normalize_api_url(API_URL, PROVIDER)
+
 DIRECTORIES = {
     "10-Projects": "进行中的项目，有明确目标和截止日期的事情",
     "20-Areas": "持续关注的领域，没有截止日期但需要长期维护的责任区",

@@ -42,12 +42,36 @@ def load_config():
         return json.loads(f.read())
 
 
+def _normalize_api_url(url, provider):
+    """根据 provider 自动补全完整的 API 路径"""
+    url = url.rstrip("/")
+
+    if provider == "anthropic":
+        # Anthropic: 需要 /v1/messages
+        if not url.endswith("/messages"):
+            if url.endswith("/v1"):
+                url += "/messages"
+            else:
+                url += "/v1/messages"
+    else:
+        # OpenAI: 需要 /v1/chat/completions
+        if not url.endswith("/completions"):
+            if url.endswith("/v1"):
+                url += "/chat/completions"
+            elif url.endswith("/chat"):
+                url += "/completions"
+            else:
+                url += "/v1/chat/completions"
+
+    return url
+
+
 def call_llm(prompt):
     """调用 LLM API，支持 OpenAI 和 Anthropic 格式"""
     config = load_config()
     llm = config["llm"]
     provider = llm.get("provider", "openai")
-    api_url = llm["api_url"]
+    api_url = _normalize_api_url(llm["api_url"], provider)
     api_key = llm["api_key"]
     model = llm["model"]
 
