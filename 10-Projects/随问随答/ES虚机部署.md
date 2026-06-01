@@ -2,7 +2,9 @@
 title: ES虚机部署
 source: 有道云笔记
 imported: true
-related: ["ES内存那点事"]
+related: ["Docker实战教程", "基础架构相关信息", "ES内存那点事"]
+tags: ["服务器", "运维", "部署指南", "部署", "Elasticsearch"]
+summary: ES虚拟机部署、插件安装、系统配置及安全设置的操作指南。
 ---
 
 创建 elasticsearch ⽤户，不能直接 root 启动：

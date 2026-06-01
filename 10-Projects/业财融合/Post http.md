@@ -2,8 +2,9 @@
 title: Post http
 source: 有道云笔记
 imported: true
-related: ["SpringBoot学习笔记", "SpringCloud", "油单信息接口", "JAVA并发编程实战"]
-related: ["SpringBoot学习笔记"]
+related: ["SpringCloud", "油单信息接口", "JAVA并发编程实战", "SpringBoot学习笔记"]
+tags: ["工具类", "HTTP请求", "Java", "代码片段"]
+summary: 一个Java实现的通用POST HTTP请求工具方法
 ---
 
 Post http

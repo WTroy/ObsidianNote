@@ -2,7 +2,9 @@
 title: 接口请求记录_超时未确认加油单提醒_3月前加油单附件转存NAS
 source: 有道云笔记
 imported: true
-related: ["超时未确认加油单提醒记录保存", "航油TODO", "FOFAS系统迁移", "数据迁移"]
+related: ["航油TODO", "FOFAS系统迁移", "超时未确认加油单提醒记录保存", "数据迁移"]
+tags: ["数据库脚本", "智慧加油系统", "接口日志"]
+summary: 超时未确认加油单提醒功能的数据库实现记录。
 ---
 
 新增数据库表： T_INTERFACE_LOGS

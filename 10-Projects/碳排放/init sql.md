@@ -2,8 +2,9 @@
 title: init sql
 source: 有道云笔记
 imported: true
-related: ["近期的SQL脚本", "统一身份认证", "菜单维护", "备份开账存储过程", "视图 V_FULE_INVOICE_RECEIPT_COSTS 的优化"]
-related: ["Docker 达梦数据库", "备份开账存储过程", "近期的SQL脚本"]
+related: ["菜单维护", "Docker 达梦数据库", "统一身份认证", "备份开账存储过程", "近期的SQL脚本"]
+tags: ["数据库初始化", "达梦数据库", "用户权限系统", "SQL脚本"]
+summary: CEMS系统用户、角色、权限及菜单表的初始化SQL脚本。
 ---
 
 ⻆⾊

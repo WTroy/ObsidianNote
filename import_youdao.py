@@ -18,6 +18,8 @@ import sys
 import urllib.request
 from pathlib import Path
 from pypdf import PdfReader
+from vault_llm import load_config, normalize_api_url, C, colored
+from vault_llm import call_llm
 
 VAULT_ROOT = Path(__file__).parent
 CONFIG_FILE = VAULT_ROOT / "90-System" / "config.json"
@@ -33,103 +35,6 @@ FOLDER_MAPPING = {
 
 # 跳过的目录（不参与关联分析）
 SKIP_DIRS = {"70-Templates", "80-Attachments", "90-System", ".obsidian", "copilot", ".smart-env"}
-
-
-# ── LLM 配置 ──────────────────────────────────────────────
-
-def load_config():
-    with open(CONFIG_FILE, "r", encoding="utf-8") as f:
-        return json.loads(f.read())
-
-
-def _normalize_api_url(url, provider):
-    """根据 provider 自动补全完整的 API 路径"""
-    url = url.rstrip("/")
-
-    if provider == "anthropic":
-        # Anthropic: 需要 /v1/messages
-        if not url.endswith("/messages"):
-            if url.endswith("/v1"):
-                url += "/messages"
-            else:
-                url += "/v1/messages"
-    else:
-        # OpenAI: 需要 /v1/chat/completions
-        if not url.endswith("/completions"):
-            if url.endswith("/v1"):
-                url += "/chat/completions"
-            elif url.endswith("/chat"):
-                url += "/completions"
-            else:
-                url += "/v1/chat/completions"
-
-    return url
-
-
-def call_llm(prompt):
-    """调用 LLM API，支持 OpenAI 和 Anthropic 格式"""
-    config = load_config()
-    llm = config["llm"]
-    provider = llm.get("provider", "openai")
-    api_url = _normalize_api_url(llm["api_url"], provider)
-    api_key = llm["api_key"]
-    model = llm["model"]
-
-    if provider == "anthropic":
-        payload = json.dumps({
-            "model": model,
-            "messages": [{"role": "user", "content": prompt}],
-            "temperature": 0.1,
-            "max_tokens": 2000,
-        }).encode("utf-8")
-
-        req = urllib.request.Request(
-            api_url,
-            data=payload,
-            headers={
-                "Content-Type": "application/json",
-                "x-api-key": api_key,
-                "anthropic-version": "2023-06-01",
-            },
-        )
-        with urllib.request.urlopen(req, timeout=120) as resp:
-            result = json.loads(resp.read().decode("utf-8"))
-        return result["content"][0]["text"]
-    else:
-        payload = json.dumps({
-            "model": model,
-            "messages": [{"role": "user", "content": prompt}],
-            "temperature": 0.1,
-            "max_tokens": 2000,
-        }).encode("utf-8")
-
-        req = urllib.request.Request(
-            api_url,
-            data=payload,
-            headers={
-                "Content-Type": "application/json",
-                "Authorization": f"Bearer {api_key}",
-            },
-        )
-        with urllib.request.urlopen(req, timeout=120) as resp:
-            result = json.loads(resp.read().decode("utf-8"))
-        return result["choices"][0]["message"]["content"]
-
-
-# ── 终端颜色 ──────────────────────────────────────────────
-
-class C:
-    BOLD = "\033[1m"
-    GREEN = "\033[92m"
-    YELLOW = "\033[93m"
-    CYAN = "\033[96m"
-    RED = "\033[91m"
-    DIM = "\033[2m"
-    END = "\033[0m"
-
-
-def colored(text, color):
-    return f"{color}{text}{C.END}"
 
 
 # ── PDF 导入功能 ──────────────────────────────────────────

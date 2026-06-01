@@ -2,10 +2,9 @@
 title: Linux 达梦数据库安装
 source: 有道云笔记
 imported: true
-related: ["信创平台达梦安装", "Docker 达梦数据库", "init sql"]
-related: ["信创平台达梦安装", "Docker 达梦数据库"]
-related: ["信创平台达梦安装", "Docker 达梦数据库"]
-related: ["信创平台达梦安装", "Docker 达梦数据库", "init sql", "Docker安装常见中间件", "CentOS7 firewalld的基本使用"]
+related: ["Docker 达梦数据库", "信创平台达梦安装", "CentOS7 firewalld的基本使用", "Docker安装常见中间件", "init sql"]
+tags: ["达梦", "部署指南", "数据库", "Linux运维"]
+summary: 在CentOS7系统下安装和配置达梦数据库DM8的详细操作指南。
 ---
 
 Centos7  下载对应的安装⽂件

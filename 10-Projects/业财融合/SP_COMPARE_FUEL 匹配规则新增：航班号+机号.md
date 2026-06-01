@@ -2,6 +2,9 @@
 title: SP_COMPARE_FUEL 匹配规则新增：航班号+机号
 source: 有道云笔记
 imported: true
+related: ["航油TODO", "视图 V_FULE_INVOICE_RECEIPT_COSTS 的优化", "近期的SQL脚本"]
+tags: ["存储过程", "SQL优化", "航油系统"]
+summary: 存储过程SP_COMPARE_FUEL的匹配规则新增航班号和机号条件
 ---
 
 更新后的存储过程：
@@ -1634,3 +1637,9 @@ COMMIT;673
 END Sp_Compare_Fuel;675
 676
 677
+
+---
+## 相关笔记
+- [[近期的SQL脚本]]
+- [[航油TODO]]
+- [[视图 V_FULE_INVOICE_RECEIPT_COSTS 的优化]]
