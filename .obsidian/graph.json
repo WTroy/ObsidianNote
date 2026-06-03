@@ -1,9 +1,9 @@
 {
   "collapse-filter": true,
-  "search": "",
+  "search": "-path:90-System -path:copilot -path:.smart-env -path:.claude -path:__pycache__ -file:Home -file:README -file:AGENTS -file:CLAUDE",
   "showTags": false,
   "showAttachments": false,
-  "hideUnresolved": false,
+  "hideUnresolved": true,
   "showOrphans": true,
   "collapse-color-groups": true,
   "colorGroups": [],
@@ -17,6 +17,6 @@
   "repelStrength": 10,
   "linkStrength": 1,
   "linkDistance": 250,
-  "scale": 1.4019828977760995,
+  "scale": 1.137004626992095,
   "close": true
 }

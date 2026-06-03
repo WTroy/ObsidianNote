@@ -5,6 +5,17 @@
   "showLineNumber": true,
   "strictLineBreaks": false,
   "readableLineLength": true,
+  "userIgnoreFilters": [
+    "90-System/",
+    "copilot/",
+    ".smart-env/",
+    ".claude/",
+    "__pycache__/",
+    "Home.md",
+    "README.md",
+    "AGENTS.md",
+    "CLAUDE.md"
+  ],
   "useMarkdownLinks": false,
   "alwaysUpdateLinks": true,
   "defaultViewMode": "source"
