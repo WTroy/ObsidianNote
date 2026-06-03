@@ -29,33 +29,42 @@ null 结果缓存，并加⼊短暂过期时间
 public class SingleLock {1
 @Autowired2
 private RedisTemplate<String, String> redisTemplate;3
-4
 public Boolean testLock() throws InterruptedException {5
 // 占⽤分布式锁，去 redis 占坑6
-String value = UUID.randomUUID().toString();7
+
+```
+String value = UUID.randomUUID().toString();
+```
+
 // 设置过期时间必须和加锁是同步的，保证原⼦性8
+
+```
 Boolean lock = redisTemplate.opsForValue().setIfAbsent("lock", value, 1,
 TimeUnit.MINUTES);
-9
-if (lock) {10
+if (lock) {
+```
+
 // 执⾏业务逻辑11
 TimeUnit.SECONDS.sleep(30);12
 // 删锁也要保证原⼦性，利⽤ Lua 脚本实现13
+
+```java
 String unLockStr = "if redis.call(\"get\",KEYS[1]) == ARGV[1] then
 return redis.call(\"del\",KEYS[1]) else return 0 end";
-14
 Long unLock = redisTemplate.execute(new DefaultRedisScript<>
 (unLockStr, Long.class), Collections.singletonList("lock"), value);
-15
-return true;16
-}else {17
+return true;
+}else {
+```
 
 // 加锁失败后重试；可以加⼀个短暂的休眠时间18
 return testLock();19
-}20
-21
-}22
-}23
+
+```
+}
+}
+}
+```
 
 ---
 ## 相关笔记

@@ -7,10 +7,16 @@ related: ["栈帧(Stack Frame)"]
 
 在  Java 5 中提供了变⻓参数，允许在调⽤⽅法时传⼊不定⻓度的参数。变⻓参数是  Java 的⼀个语法糖，本质上还是基
 于数组的实现：
+
+```java
 public class test{
 public static void test(String...args){
+```
+
 // 本质上还是基于数组的实现：
 for(String arg : args) {// 当作数组⽤ foreach 遍历
+
+```java
 System.out.println(arg);
 }
 }
@@ -18,22 +24,38 @@ public static void main(String[] args) {
 test("aa", "bb", "cc");
 }
 }
+```
+
 使⽤规则：
 问：找出下⾯程序存在的问题并只允许修改调⽤相关代码将其修复好？
+
+```python
 public class Demo {
 public void print(String str, Integer... args) {}
 public void print(String str, String... args) {}
 }
+```
+
 // 调⽤
+
+```python
 Demo demo = new Demo();
 demo.print("hello");
 demo.print("hello", null);
+```
+
 答：上⾯代码直接编译报错，因为调⽤处对于两个⽅法都能匹配，编译器不知道选哪个，所以报错了，故别让  null 值和空值威胁到变⻓
 ⽅法调⽤，对于上⾯调⽤部分来说修改如下即可运⾏：
+
+```python
 Demo demo = new Demo();
 String[] strs = null;
 demo.print("hello", strs);
+```
+
 问：分别说说下⾯程序注释⾏有问题吗，为什么？
+
+```python
 class Base {
 void print(String... args) {
 System.out.println("Base print.");
@@ -43,15 +65,20 @@ class Sub extends Base {
 @Override
 void print(String[] args) {
 System.out.println("Sub print.");
+```
+
 ⼀个⽅法只可以有⼀个变⻓参数
 边⻓参数的位置必须是最后⼀个
 
+```python
 }
 }
 Base base = new Sub();
-base.print("hello");    //1
+base.print("hello");    //
 Sub sub = new Sub();
-sub.print("hello");    //2
+sub.print("hello");    //
+```
+
 答：注释  1 能编译通过且打印为  Sub print. ，因为 base 引⽤变量把⼦类对象  sub 做了向上转型，形参列表是由⽗类决定的，当然
 能通过。 **** 编译看左边，运⾏看右边。【当⽗类引⽤变量指向⼦类对象的时候，会将⼦类对象向上转型】
 注释  2 编译报错为传递的参数 String 类型与⽅法需要的  String[] 类型不匹配，因为这时编译器看到⼦类覆写了⽗类的  print ⽅

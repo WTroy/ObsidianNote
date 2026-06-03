@@ -15,11 +15,13 @@ import json
 import os
 import re
 import sys
+import unicodedata
 import urllib.request
 from pathlib import Path
 from pypdf import PdfReader
 from vault_llm import load_config, normalize_api_url, C, colored
-from vault_llm import call_llm
+from vault_llm import build_frontmatter_block, call_llm, parse_frontmatter_block
+from vault_llm import should_exclude_from_index, strip_related_section
 
 VAULT_ROOT = Path(__file__).parent
 CONFIG_FILE = VAULT_ROOT / "90-System" / "config.json"
@@ -32,9 +34,6 @@ FOLDER_MAPPING = {
     "来自手机": "00-Inbox",
     "我的资源": "30-Resources",
 }
-
-# 跳过的目录（不参与关联分析）
-SKIP_DIRS = {"70-Templates", "80-Attachments", "90-System", ".obsidian", "copilot", ".smart-env"}
 
 
 # ── PDF 导入功能 ──────────────────────────────────────────
@@ -62,8 +61,33 @@ def clean_filename(name):
     return name.strip()
 
 
+def clean_extracted_text(text):
+    """清洗 PDF 提取文本，减少索引和 QA 噪声。"""
+    text = text.replace("\x00", ":")
+    text = unicodedata.normalize("NFKC", text)
+    text = text.replace("\r\n", "\n").replace("\r", "\n")
+
+    # PDF 经常把 URL/长标识符截断到下一行，先尽量拼回去。
+    url_break = re.compile(r"(https?://[^\s\n]+)\s*\n\s*([A-Za-z0-9/?#%&=._~:;,+-]+)")
+    previous = None
+    while previous != text:
+        previous = text
+        text = url_break.sub(r"\1\2", text)
+
+    text = re.sub(r"(?m)(https?://[^\s\n]*[A-Za-z/])\d{1,4}(?=\n|$)", r"\1", text)
+
+    # 去掉单独成行的页码/行号，保留正文里的编号。
+    text = re.sub(r"(?m)^\s*\d{1,4}\s*$\n?", "", text)
+
+    # 清理兼容字符归一化后残留的多余空白。
+    text = re.sub(r"[ \t]+", " ", text)
+    text = re.sub(r"\n{3,}", "\n\n", text)
+    return text.strip()
+
+
 def text_to_markdown(text, title):
     """将纯文本转换为 Markdown 格式"""
+    text = clean_extracted_text(text)
     lines = text.split('\n')
     md_lines = []
 
@@ -180,11 +204,17 @@ def get_all_notes():
     notes = []
     for md_file in VAULT_ROOT.rglob("*.md"):
         rel = md_file.relative_to(VAULT_ROOT)
-        parts = rel.parts
-        if any(p in SKIP_DIRS for p in parts):
+        if should_exclude_from_index(rel):
             continue
         if md_file.parent == VAULT_ROOT:
             continue
+        try:
+            content = md_file.read_text(encoding="utf-8")
+        except Exception:
+            content = ""
+        if should_exclude_from_index(rel, content):
+            continue
+        parts = rel.parts
         notes.append({
             "name": md_file.stem,
             "path": str(rel),
@@ -238,35 +268,16 @@ def add_links_to_note(filepath, related_notes):
     with open(filepath, "r", encoding="utf-8") as f:
         content = f.read()
 
-    # 检查是否已有相关笔记部分
-    if "## 相关笔记" in content:
-        # 替换已有的相关笔记部分
-        content = re.sub(
-            r'\n---\n## 相关笔记\n.*$',
-            '',
-            content,
-            flags=re.DOTALL
-        )
+    content = strip_related_section(content)
+    fm, body = parse_frontmatter_block(content)
 
-    # 构建关联笔记链接
     if related_notes:
-        links_section = "\n\n---\n## 相关笔记\n"
-        for name in related_notes:
-            links_section += f"- [[{name}]]\n"
-        content += links_section
+        deduped = list(dict.fromkeys(related_notes))
+        fm["related"] = deduped
+        links_section = "\n\n---\n## 相关笔记\n" + "\n".join(f"- [[{name}]]" for name in deduped)
+        body = body.rstrip() + links_section
 
-    # 更新 frontmatter 中的 related 字段
-    if related_notes and content.startswith("---"):
-        parts = content.split("---", 2)
-        if len(parts) >= 3:
-            fm_text = parts[1].strip()
-            body = parts[2].strip()
-
-            # 添加 related 字段
-            related_json = json.dumps(related_notes, ensure_ascii=False)
-            fm_text += f"\nrelated: {related_json}"
-
-            content = f"---\n{fm_text}\n---\n\n{body}"
+    content = build_frontmatter_block(fm) + "\n\n" + body.strip()
 
     with open(filepath, "w", encoding="utf-8") as f:
         f.write(content)

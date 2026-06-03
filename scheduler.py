@@ -11,12 +11,15 @@
 import subprocess
 import sys
 import time
+import os
 from datetime import datetime
 from pathlib import Path
 
 VAULT_ROOT = Path(__file__).parent
 LOG_FILE = VAULT_ROOT / "90-System" / "organize.log"
+LOCK_FILE = VAULT_ROOT / "90-System" / "organize.lock"
 SCHEDULE_HOUR = 1  # 凌晨 1 点执行
+TASK_TIMEOUT_SECONDS = 60 * 60
 
 
 def log(msg):
@@ -28,7 +31,30 @@ def log(msg):
         f.write(line + "\n")
 
 
+def acquire_lock():
+    if LOCK_FILE.exists():
+        age = time.time() - LOCK_FILE.stat().st_mtime
+        if age < TASK_TIMEOUT_SECONDS:
+            log("定时整理任务跳过：已有整理任务在运行")
+            return False
+        log("发现过期锁文件，自动清理")
+        LOCK_FILE.unlink(missing_ok=True)
+
+    try:
+        fd = os.open(LOCK_FILE, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+    except FileExistsError:
+        log("定时整理任务跳过：锁文件已被其他进程创建")
+        return False
+
+    with os.fdopen(fd, "w", encoding="utf-8") as f:
+        f.write(str(datetime.now()))
+    return True
+
+
 def run_organize():
+    if not acquire_lock():
+        return
+
     log("定时整理任务开始")
     try:
         result = subprocess.run(
@@ -36,13 +62,18 @@ def run_organize():
             capture_output=True,
             text=True,
             cwd=str(VAULT_ROOT),
+            timeout=TASK_TIMEOUT_SECONDS,
         )
         log(result.stdout.strip())
         if result.stderr:
             log(f"STDERR: {result.stderr.strip()}")
         log(f"定时整理任务结束 (exit={result.returncode})")
+    except subprocess.TimeoutExpired:
+        log(f"定时整理任务超时，已终止 (timeout={TASK_TIMEOUT_SECONDS}s)")
     except Exception as e:
         log(f"执行出错: {e}")
+    finally:
+        LOCK_FILE.unlink(missing_ok=True)
 
 
 def main():

@@ -22,10 +22,16 @@ imported: true
 */
 public static void bubbleSort(int[] numbers) {
 int temp; // 记录临时中间值
+
+```
 int size = numbers.length; // 数组⼤⼩
 for (int i = 0; i < size - 1; i++) {
 for (int j = i + 1; j < size; j++) {
+```
+
 if (numbers[i] < numbers[j]) { // 交换两数的位置
+
+```yaml
 temp = numbers[i];
 numbers[i] = numbers[j];
 numbers[j] = temp;
@@ -33,6 +39,7 @@ numbers[j] = temp;
 }
 }
 }
+```
 
 快速排序使⽤分治法策略来把⼀个序列分为两个⼦序列。
 
@@ -54,10 +61,16 @@ numbers[j] = temp;
 * @param start
 * @param end
 */
+
+```java
 public static void quickSort(int[] numbers, int start, int end) {
 if (start < end) {
 int base = numbers[start]; // 选定的基准值（第⼀个数值作为基准值）
+```
+
 int temp; // 记录临时中间值
+
+```yaml
 int i = start, j = end;
 do {
 while ((numbers[i] < base) && (i < end))
@@ -78,6 +91,7 @@ if (end > i)
 quickSort(numbers, i, end);
 }
 }
+```
 
 选择排序是⼀种简单直观的排序⽅法，每次寻找序列中的最⼩值，然后放在最末尾的位置。
 
@@ -93,6 +107,8 @@ quickSort(numbers, i, end);
 *
 * @param numbers
 */
+
+```java
 public static void selectSort(int[] numbers) {
 int size = numbers.length, temp;
 for (int i = 0; i < size; i++) {
@@ -105,6 +121,7 @@ numbers[i] = numbers[k];
 numbers[k] = temp;
 }
 }
+```
 
 插⼊排序的⼯作原理是通过构建有序序列，对于未排序数据，在已排序序列中从后向前扫描，找到相应位置并插⼊。其具体步骤参⻅代码及
 注释。
@@ -122,19 +139,24 @@ numbers[k] = temp;
 *
 * @param numbers
 */
+
+```java
 public static void insertSort(int[] numbers) {
 int size = numbers.length, temp, j;
 for(int i=1; i<size; i++) {
 temp = numbers[i];
 for(j = i; j > 0 && temp < numbers[j-1]; j--)
+```
+
 复制代码
 复制代码
 
+```
 numbers[j] = numbers[j-1];
 numbers[j] = temp;
 }
 }
-
+```
 
 归并排序是建⽴在归并操作上的⼀种有效的排序算法，归并是指将两个已经排序的序列合并成⼀个序列的操作。参考代码如下：
 
@@ -151,6 +173,8 @@ numbers[j] = temp;
 *
 * @param numbers
 */
+
+```sql
 public static void mergeSort(int[] numbers, int left, int right) {
 int t = 1;// 每组元素个数
 int size = right - left + 1;
@@ -167,6 +191,8 @@ merge(numbers, i, i + (s - 1), right);
 }
 }
 /**
+```
+
 * 归并算法实现
 *
 * @param data
@@ -177,6 +203,8 @@ merge(numbers, i, i + (s - 1), right);
 
 * @param r
 */
+
+```java
 private static void merge(int[] data, int p, int q, int r) {
 int[] B = new int[data.length];
 int s = p;
@@ -199,28 +227,43 @@ B[k++] = data[s++];
 for (int i = p; i <= r; i++)
 data[i] = B[i];
 }
+```
 
 将之前介绍的所有排序算法整理成NumberSort类，代码
 
 代码
+
+```python
 package test.sort;
 import java.util.Random;
+```
+
 //Java实现的排序类
 public class NumberSort {
 //私有构造⽅法，禁⽌实例化
+
+```java
 private NumberSort() {
 super();
 }
+```
+
 //冒泡法排序
 public static void bubbleSort(int[] numbers) {
 int temp; // 记录临时中间值
+
+```
 int size = numbers.length; // 数组⼤⼩
 for (int i = 0; i < size - 1; i++) {
+```
+
 复制代码
 复制代码
 
 for (int j = i + 1; j < size; j++) {
 if (numbers[i] < numbers[j]) { // 交换两数的位置
+
+```yaml
 temp = numbers[i];
 numbers[i] = numbers[j];
 numbers[j] = temp;
@@ -228,11 +271,19 @@ numbers[j] = temp;
 }
 }
 }
+```
+
 //快速排序
+
+```java
 public static void quickSort(int[] numbers, int start, int end) {
 if (start < end) {
 int base = numbers[start]; // 选定的基准值（第⼀个数值作为基准值）
+```
+
 int temp; // 记录临时中间值
+
+```yaml
 int i = start, j = end;
 do {
 while ((numbers[i] < base) && (i < end))
@@ -253,7 +304,11 @@ if (end > i)
 quickSort(numbers, i, end);
 }
 }
+```
+
 //选择排序
+
+```java
 public static void selectSort(int[] numbers) {
 int size = numbers.length, temp;
 for (int i = 0; i < size; i++) {
@@ -267,9 +322,12 @@ numbers[i] = numbers[k];
 numbers[k] = temp;
 }
 }
+```
+
 //插⼊排序
 // @param numbers
 
+```java
 public static void insertSort(int[] numbers) {
 int size = numbers.length, temp, j;
 for (int i = 1; i < size; i++) {
@@ -279,7 +337,11 @@ numbers[j] = numbers[j - 1];
 numbers[j] = temp;
 }
 }
+```
+
 //归并排序
+
+```sql
 public static void mergeSort(int[] numbers, int left, int right) {
 int t = 1;// 每组元素个数
 int size = right - left + 1;
@@ -295,7 +357,11 @@ if (i + (s - 1) < right)
 merge(numbers, i, i + (s - 1), right);
 }
 }
+```
+
 //归并算法实现
+
+```java
 private static void merge(int[] data, int p, int q, int r) {
 int[] B = new int[data.length];
 int s = p;
@@ -318,6 +384,7 @@ B[k++] = data[s++];
 for (int i = p; i <= r; i++)
 data[i] = B[i];
 }
+```
 
 }
 
@@ -325,4 +392,7 @@ data[i] = B[i];
 可以深⼊了解计算机语⾔的特点，可以以此作为学习各种编程语⾔的基础。
 来⾃  < >
 复制代码
+
+```yaml
 http://www.cnblogs.com/sevenyuan/archive/2009/12/04/1616897.html
+```

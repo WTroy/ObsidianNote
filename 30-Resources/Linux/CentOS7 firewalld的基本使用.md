@@ -23,31 +23,50 @@ imported: true
 查看版本：  firewall-cmd --version
 查看帮助：  firewall-cmd --help
 显示状态：  firewall-cmd --state
-查看所有打开的端⼝：  firewall-cmd --zone=public --list-ports
+查看所有打开的端⼝：  firewall-cmd --zone=public --list-ports
 更新防⽕墙规则：  firewall-cmd --reload
-查看区域信息 :  firewall-cmd --get-active-zones
+查看区域信息 :  firewall-cmd --get-active-zones
 查看指定接⼝所属区域：  firewall-cmd --get-zone-of-interface=eth0
 拒绝所有包： firewall-cmd --panic-on
 取消拒绝状态：  firewall-cmd --panic-off
 查看是否拒绝：  firewall-cmd --query-panic
 那怎么开启⼀个端⼝呢
 添加
-firewall-cmd --zone=public --add-port=80/tcp --permanent     （ --permanent 永久⽣效，没有此参数重启后失效）
-firewall-cmd --zone=public --add-port=6379/tcp --permanent
+
+```bash
+firewall-cmd --zone=public --add-port=80/tcp --permanent     （ --permanent 永久⽣效，没有此参数重启后失效）
+firewall-cmd --zone=public --add-port=6379/tcp --permanent
+```
+
 重新载⼊
-firewall-cmd --reload
+
+```bash
+firewall-cmd --reload
+```
+
 查看
-firewall-cmd --zone= public --query-port=80/tcp
+
+```bash
+firewall-cmd --zone= public --query-port=80/tcp
+```
+
 删除
-firewall-cmd --zone= public --remove-port=80/tcp --permanent
+
+```bash
+firewall-cmd --zone= public --remove-port=80/tcp --permanent
 # 查看当前 zones
 # firewall-cmd --get-active-zones
 # 显示当前开放端⼝
+```
 
 # firewall-cmd --zone=public --list-ports
-下⾯来说⼀下 :  zone   这个参数是做什么的
+下⾯来说⼀下 :  zone   这个参数是做什么的
 zone 的概念：硬件防⽕墙默认⼀般有三个区， firewall 引⼊这⼀概念系统默认存在以下区域：
+
+```sql
 drop ：默认丢弃所有包
+```
+
 block ：拒绝所有外部连接，允许内部发起的连接
 public ：指定外部连接可以进⼊
 external ：这个不太明⽩，功能上和上⾯相同，允许指定的外部连接
@@ -64,6 +83,6 @@ internal ：信任所有连接
 上⽤ :firewall-cmd --permanent --zone=public --add-port=8080/tcp 开放端⼝，其中数字就是你想要开放的端⼝号，
 --permanent 参数表示永久的意思，这样就不必每次启动防⽕墙的时候配置， tcp 代表你要开放的端⼝号的⽹络协议，
 也可以是 udp 的。
-2 、接来下就是允许防⽕墙伪装 ip : firewall-cmd --add-masquerade --permanent 这⼀步必须做。
+2 、接来下就是允许防⽕墙伪装 ip : firewall-cmd --add-masquerade --permanent 这⼀步必须做。
 3 、将 80 端⼝的流量转发⾄ 8080: firewall-cmd --add-forward-port=port=80:proto=tcp:toport=8080 --permanent
-4. 最后别忘了  firewall-cmd --reload  使最新的防⽕墙设置规则⽣效。
+4. 最后别忘了  firewall-cmd --reload  使最新的防⽕墙设置规则⽣效。

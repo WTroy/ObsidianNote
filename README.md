@@ -60,6 +60,11 @@
 
 **开启 Vault QA Mode**（对整个笔记库提问）
 
+建议配置：
+- **Context turns**：`0`（直接 QA 时先检索 vault，避免先用历史对话改写问题）
+- **Max source chunks**：`30`
+- **QA exclusions**：同步 `90-System/index_exclusions.json` 中的目录和敏感笔记路径
+
 ### 1.6 安装 Python 环境
 
 ```bash
@@ -173,6 +178,8 @@ vault/
 | 文件 | 用途 |
 |------|------|
 | `config.json` | LLM 配置（API 地址、密钥、模型名） |
+| `index_exclusions.json` | QA/索引排除规则，记录系统目录和敏感笔记 |
+| `format_markdown_notes.py` | 批量修复导入笔记的 Markdown/代码块/SQL 格式 |
 | `organize.log` | 整理脚本的运行日志 |
 
 #### 自动管理目录（不用手动操作）
@@ -189,7 +196,9 @@ vault/
 
 ### 3.1 配置文件
 
-所有 LLM 相关配置集中在 `90-System/config.json`：
+Python 脚本使用 `90-System/config.json`。Obsidian Copilot 使用插件自己的配置文件（`.obsidian/plugins/copilot/data.json`，被 `.gitignore` 忽略，避免提交密钥）。
+
+`90-System/config.json` 示例：
 
 ```json
 {
@@ -214,7 +223,27 @@ vault/
 | `gemma-4-e4b-it-8bit` | 对话、问答、笔记分析 | `127.0.0.1:8000` |
 | `bge-m3-mlx-4bit` | 嵌入向量、语义搜索 | `127.0.0.1:8000` |
 
-### 3.3 更换模型
+### 3.3 配置边界
+
+| 配置 | 用途 | 文件 |
+|------|------|------|
+| Copilot Chat / Vault QA | Obsidian 侧边栏对话和 vault 检索问答 | `.obsidian/plugins/copilot/data.json` |
+| Python 自动整理脚本 | `organize.py`、`import_youdao.py --link` | `90-System/config.json` |
+| Embedding | Python 脚本和 Copilot 均使用本地 embedding 服务 | `90-System/config.json` / Copilot 插件设置 |
+| QA/索引排除规则 | 排除系统目录、对话记录、敏感笔记 | `90-System/index_exclusions.json` |
+
+### 3.4 QA 排除规则
+
+敏感笔记请在 frontmatter 中添加：
+
+```yaml
+private: true
+qa_exclude: true
+```
+
+同时把路径加入 `90-System/index_exclusions.json`，并同步到 Copilot 的 **QA exclusions**。修改排除规则后，在 Obsidian 命令面板执行 **Copilot: Force reindex vault**。
+
+### 3.5 更换模型
 
 修改 `90-System/config.json` 中的 `model` 字段即可，无需重启其他服务。
 
@@ -284,7 +313,33 @@ AI 会自动完成：
 - **加双链**：在笔记末尾添加相关笔记的 `[[双链]]`
 - **写摘要**：在 frontmatter 中添加一句话摘要
 
-### 4.5 AI 对话问答
+### 4.5 Markdown 格式化
+
+有道云/PDF 导入的笔记经常会出现代码块丢失、SQL 被拆开、导出行号混入正文、`related` 重复等问题。使用 `90-System/format_markdown_notes.py` 做本地批量修复。
+
+```bash
+conda activate obsidian
+
+# 预览将要修改的文件，不写入
+python 90-System/format_markdown_notes.py
+
+# 应用修复
+python 90-System/format_markdown_notes.py --apply
+```
+
+脚本会处理：
+- 给命令行、SQL、Java、Python、YAML/XML 配置片段补代码块
+- 合并重复的 frontmatter `related`，并刷新末尾 `## 相关笔记`
+- 清理 PDF 导出行号，例如 `INSERT1`、`INTO2`、`PROXYID,3`、`'; 7`
+- 合并被错误拆开的连续 SQL 代码块
+- 修复 SQL 字符串中的硬换行，例如 `已拒 绝`、`未同 步`
+
+安全边界：
+- 不调用外部 LLM，所有处理都在本地完成
+- 不猜测源文本里缺失的 SQL 值，只修复高置信导出格式问题
+- 默认 dry-run；只有加 `--apply` 才写入文件
+
+### 4.6 AI 对话问答
 
 1. 点击右侧边栏的 Copilot 图标
 2. 直接打字聊天（使用 `gemma-4-e4b-it-8bit` 模型）
@@ -298,11 +353,11 @@ AI 会自动完成：
 | 选中文本提问 | 选中文字 → `Cmd+P` → Copilot Chat |
 | 总结/翻译 | 选中文本 → Copilot 侧边栏 → 用 `/` 命令 |
 
-### 4.6 语义搜索（Smart Connections）
+### 4.7 语义搜索（Smart Connections）
 
 打开任意笔记，右侧 Smart Connections 面板会自动显示语义相关的笔记。
 
-### 4.7 首页仪表盘
+### 4.8 首页仪表盘
 
 点击 `Home.md` 查看：
 - 最近修改的笔记
@@ -311,7 +366,7 @@ AI 会自动完成：
 - 本周日记
 - Inbox 里待整理的笔记
 
-### 4.8 知识图谱
+### 4.9 知识图谱
 
 按 `Cmd+G` 打开 Graph View，可视化查看所有笔记之间的链接关系。
 

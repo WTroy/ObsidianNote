@@ -1,0 +1,28 @@
+{
+  "directories": [
+    ".obsidian",
+    ".smart-env",
+    "70-Templates",
+    "80-Attachments",
+    "90-System",
+    "copilot"
+  ],
+  "files": [
+    "AGENTS.md",
+    "CLAUDE.md",
+    "README.md",
+    "findings.md",
+    "progress.md",
+    "task_plan.md",
+    "10-Projects/业财融合/共享系统.md",
+    "10-Projects/业财融合/统一身份认证.md",
+    "10-Projects/业财融合/查询机组人员信息并推送事找人.md",
+    "10-Projects/碳排放/Linux 达梦数据库安装.md",
+    "10-Projects/碳排放/信创平台达梦安装.md"
+  ],
+  "path_prefixes": [],
+  "frontmatter_flags": [
+    "private",
+    "qa_exclude"
+  ]
+}

@@ -9,7 +9,6 @@ tags: [moc]
 
 ## 核心概念
 
-
 ## 相关笔记
 
 ```dataview
@@ -21,7 +20,6 @@ SORT file.mtime DESC
 
 ## 待深入研究
 
-- [ ] 
+- [ ]
 
 ## 参考资源
-

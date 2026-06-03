@@ -16,7 +16,9 @@ from pathlib import Path
 from vault_llm import load_config, normalize_api_url, C, colored
 from vault_llm import find_similar_notes, assess_content_quality, assess_timeliness
 from vault_llm import get_embeddings, cosine_similarity
-from vault_llm import call_llm, parse_frontmatter_list, merge_frontmatter_list
+from vault_llm import build_frontmatter_block, call_llm, parse_frontmatter_block
+from vault_llm import parse_frontmatter_list, merge_frontmatter_list, strip_related_section
+from vault_llm import should_exclude_from_index
 
 VAULT_ROOT = Path(__file__).parent
 INBOX_DIR = VAULT_ROOT / "00-Inbox"
@@ -35,9 +37,6 @@ DIRECTORIES = {
     "40-Archives": "已完成或不再活跃的内容",
 }
 
-SKIP_DIRS = {"70-Templates", "80-Attachments", "90-System", ".obsidian", "copilot", ".smart-env"}
-
-
 # ── 工具函数 ──────────────────────────────────────────────
 
 def get_existing_notes():
@@ -45,11 +44,14 @@ def get_existing_notes():
     notes = []
     for md_file in VAULT_ROOT.rglob("*.md"):
         rel = md_file.relative_to(VAULT_ROOT)
-        parts = rel.parts
-        if any(p in SKIP_DIRS for p in parts):
+        if should_exclude_from_index(rel):
             continue
         if md_file.parent == VAULT_ROOT:
             continue
+        content = read_note(md_file)
+        if should_exclude_from_index(rel, content):
+            continue
+        parts = rel.parts
         name = md_file.stem
         notes.append({
             "name": name,
@@ -78,30 +80,28 @@ def read_note(filepath):
 
 def parse_frontmatter(content):
     """解析 frontmatter，返回 (frontmatter_dict, body)"""
-    if content.startswith("---"):
-        parts = content.split("---", 2)
-        if len(parts) >= 3:
-            fm_text = parts[1].strip()
-            body = parts[2].strip()
-            fm = {}
-            for line in fm_text.split("\n"):
-                if ":" in line:
-                    key, val = line.split(":", 1)
-                    fm[key.strip()] = val.strip()
-            return fm, body
-    return {}, content
+    return parse_frontmatter_block(content)
 
 
 def build_frontmatter(fm_dict):
     """生成 frontmatter 文本"""
-    lines = ["---"]
-    for k, v in fm_dict.items():
-        if isinstance(v, list):
-            lines.append(f"{k}: {json.dumps(v, ensure_ascii=False)}")
-        else:
-            lines.append(f"{k}: {v}")
-    lines.append("---")
-    return "\n".join(lines)
+    return build_frontmatter_block(fm_dict)
+
+
+def unique_target_path(target_path, source_path):
+    """避免移动时覆盖已有同名笔记。"""
+    if target_path == source_path or not target_path.exists():
+        return target_path
+
+    stem = target_path.stem
+    suffix = target_path.suffix
+    parent = target_path.parent
+    counter = 1
+    while True:
+        candidate = parent / f"{stem} ({counter}){suffix}"
+        if not candidate.exists():
+            return candidate
+        counter += 1
 
 
 def parse_llm_response(text):
@@ -263,11 +263,12 @@ def organize_note(filepath, suggestion, dry_run=False):
     elif action == "improve":
         # 改进模式：添加待改进标签
         fm["status"] = "needs_improvement"
-        if tags:
-            tags = [t for t in tags if "待改进" not in t]
+        tags = [t for t in tags if "待改进" not in t]
         tags.append("待改进")
+        fm["tags"] = merge_frontmatter_list(fm, "tags", tags)
         if "improvement_needed" not in fm:
             fm["improvement_needed"] = True
+        directory = "00-Inbox"
 
     # 正常移动模式
     if action == "move":
@@ -280,16 +281,18 @@ def organize_note(filepath, suggestion, dry_run=False):
             fm["created"] = filepath.stem if re.match(r"\d{4}-\d{2}-\d{2}", filepath.stem) else ""
 
     # 构建新内容
+    body = strip_related_section(body)
     new_content = build_frontmatter(fm) + "\n\n" + body
 
     # 添加相关笔记链接
     if related:
+        related = list(dict.fromkeys(related))
         links = [f"[[{name}]]" for name in related]
         new_content += "\n\n---\n## 相关笔记\n" + "\n".join(f"- {link}" for link in links)
 
     # 移动文件
     target_dir = VAULT_ROOT / directory
-    target_path = target_dir / filepath.name
+    target_path = unique_target_path(target_dir / filepath.name, filepath)
 
     if dry_run:
         return {
@@ -338,6 +341,14 @@ def get_vault_notes(directories=None):
             continue
         for md_file in dir_path.rglob("*.md"):
             rel = md_file.relative_to(VAULT_ROOT)
+            if should_exclude_from_index(rel):
+                continue
+            try:
+                content = read_note(md_file)
+            except Exception:
+                content = ""
+            if should_exclude_from_index(rel, content):
+                continue
             name = md_file.stem
             notes.append({
                 "name": name,
@@ -379,21 +390,22 @@ def analyze_global(dry_run=False, auto_mode=False):
         print(colored(f"\n📂 {directory} ({len(dir_notes)} 篇)", C.BOLD))
 
         # 批量获取嵌入向量（用于相似度检测）
-        note_contents = []
+        note_records = []
         for note in dir_notes:
             try:
                 content = read_note(note["filepath"])
-                note_contents.append(content)
+                note_records.append((note, content))
             except Exception as e:
                 print(f"  ⚠️  无法读取 {note['name']}: {e}")
                 continue
 
-        if not note_contents:
+        if not note_records:
             continue
 
         # 相似度检测
         print(colored("  🔍 批量分析中...", C.DIM), end="", flush=True)
         try:
+            note_contents = [content for _, content in note_records]
             all_embeddings = get_embeddings(note_contents)
         except Exception as e:
             print(colored(f" ❌ 获取嵌入向量失败: {e}", C.RED))
@@ -401,12 +413,8 @@ def analyze_global(dry_run=False, auto_mode=False):
         print(colored(" ✓", C.GREEN))
 
         # 逐篇分析
-        for i, note in enumerate(dir_notes):
-            if i >= len(note_contents):
-                continue
-
+        for i, (note, content) in enumerate(note_records):
             total += 1
-            content = note_contents[i]
             note_name = note["name"]
 
             # 质量评估
@@ -419,7 +427,7 @@ def analyze_global(dry_run=False, auto_mode=False):
             # 相似度检测（批量）
             if all_embeddings and i < len(all_embeddings):
                 similar_to = []
-                for j, (other_note, other_emb) in enumerate(zip(dir_notes, all_embeddings)):
+                for j, ((other_note, _), other_emb) in enumerate(zip(note_records, all_embeddings)):
                     if i != j and j < len(all_embeddings):
                         score = cosine_similarity(all_embeddings[i], other_emb)
                         if score >= 0.85:  # 相似度阈值
@@ -505,10 +513,12 @@ def analyze_global(dry_run=False, auto_mode=False):
                                 fm["summary"] = suggestion.get("summary")
 
                             # 构建新内容
+                            body = strip_related_section(body)
                             new_content = build_frontmatter(fm) + "\n\n" + body
 
-                            # 添加相关笔记链接到正文末尾（如果没有的话）
-                            if related and "## 相关笔记" not in new_content:
+                            # 刷新相关笔记链接正文块
+                            if related:
+                                related = list(dict.fromkeys(related))
                                 links = [f"- [[{name}]]" for name in related]
                                 new_content += "\n\n---\n## 相关笔记\n" + "\n".join(links)
 

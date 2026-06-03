@@ -2,6 +2,7 @@
 .obsidian/workspace.json
 .obsidian/workspace-mobile.json
 .obsidian/plugins/*/data.json
+.obsidian/copilot-index-*.json
 
 # Smart Connections 缓存
 .smart-env/

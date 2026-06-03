@@ -14,8 +14,12 @@ imported: true
 SpringCloud Alibaba 环境准备
 Mysql 数据库准备：
 视频服务数据库  video 表
-CREATE TABLE `vedio` (1
-`id` int(11) NOT NULL AUTO_INCREMENT,2
+
+```sql
+CREATE TABLE `vedio` (
+`id` int(11) NOT NULL AUTO_INCREMENT,
+```
+
 `title` varchar(524) DEFAULT NULL COMMENT ' 视频标题 ',3
 `summary` varchar(1024) DEFAULT NULL COMMENT ' 概述 ',4
 `cover_img` varchar(524) DEFAULT NULL COMMENT ' 封⾯图 ',5
@@ -25,8 +29,12 @@ CREATE TABLE `vedio` (1
 PRIMARY KEY (`id`)9
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb410
 ⽤户服务数据库 user 表
-CREATE TABLE `user` (1
-`id` int(11) NOT NULL AUTO_INCREMENT,2
+
+```sql
+CREATE TABLE `user` (
+`id` int(11) NOT NULL AUTO_INCREMENT,
+```
+
 `phone` varchar(32) DEFAULT NULL COMMENT ' ⼿机号 ',3
 `pwd` varchar(128) DEFAULT NULL COMMENT ' 密码 ',4
 `sex` int(2) DEFAULT NULL COMMENT ' 性别 ',5
@@ -39,8 +47,12 @@ CREATE TABLE `user` (1
 PRIMARY KEY (`id`)11
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb412
 订单服务数据库 video_order 表
-CREATE TABLE `vedio_order` (1
-`id` int(11) NOT NULL AUTO_INCREMENT,2
+
+```sql
+CREATE TABLE `vedio_order` (
+`id` int(11) NOT NULL AUTO_INCREMENT,
+```
+
 `out_trade_no` varchar(64) DEFAULT NULL COMMENT ' 订单唯⼀标识 ',3
 `state` int(11) DEFAULT NULL COMMENT '0 表示未⽀付， 1 表示已⽀付 ',4
 `total_fee` int(11) DEFAULT NULL COMMENT ' ⽀付⾦额，单位分 ',5

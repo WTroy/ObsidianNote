@@ -10,9 +10,11 @@ from pathlib import Path
 
 VAULT_ROOT = Path(__file__).parent
 CONFIG_FILE = VAULT_ROOT / "90-System" / "config.json"
+INDEX_EXCLUSIONS_FILE = VAULT_ROOT / "90-System" / "index_exclusions.json"
 
 # LLM 配置缓存
 _config_cache = None
+_index_exclusions_cache = None
 
 
 def load_config():
@@ -22,6 +24,160 @@ def load_config():
         with open(CONFIG_FILE, "r", encoding="utf-8") as f:
             _config_cache = json.loads(f.read())
     return _config_cache
+
+
+def default_index_exclusions():
+    """默认的索引/QA 排除规则。"""
+    return {
+        "directories": [
+            ".obsidian",
+            ".smart-env",
+            "70-Templates",
+            "80-Attachments",
+            "90-System",
+            "copilot",
+        ],
+        "files": [
+            "AGENTS.md",
+            "CLAUDE.md",
+            "README.md",
+            "findings.md",
+            "progress.md",
+            "task_plan.md",
+        ],
+        "path_prefixes": [],
+        "frontmatter_flags": [
+            "private",
+            "qa_exclude",
+        ],
+    }
+
+
+def load_index_exclusions():
+    """加载共享索引/QA 排除规则。"""
+    global _index_exclusions_cache
+    if _index_exclusions_cache is not None:
+        return _index_exclusions_cache
+
+    exclusions = default_index_exclusions()
+    if INDEX_EXCLUSIONS_FILE.exists():
+        with open(INDEX_EXCLUSIONS_FILE, "r", encoding="utf-8") as f:
+            configured = json.loads(f.read())
+        for key, value in configured.items():
+            if isinstance(value, list):
+                exclusions[key] = value
+
+    _index_exclusions_cache = exclusions
+    return exclusions
+
+
+def normalize_vault_path(path) -> str:
+    """转换为 vault 内 POSIX 相对路径。"""
+    path = Path(path)
+    try:
+        path = path.relative_to(VAULT_ROOT)
+    except ValueError:
+        pass
+    return path.as_posix()
+
+
+def parse_frontmatter_block(content: str) -> tuple[dict, str]:
+    """解析简单 frontmatter，返回 (frontmatter, body)。"""
+    if not content.startswith("---"):
+        return {}, content
+
+    parts = content.split("---", 2)
+    if len(parts) < 3:
+        return {}, content
+
+    fm = {}
+    for line in parts[1].strip().splitlines():
+        if ":" not in line:
+            continue
+        key, value = line.split(":", 1)
+        fm[key.strip()] = parse_frontmatter_value(value.strip())
+    return fm, parts[2].strip()
+
+
+def parse_frontmatter_value(value):
+    """解析 frontmatter 标量/JSON 列表。"""
+    value = value.strip()
+    if not value:
+        return ""
+
+    lowered = value.strip('"\'').lower()
+    if lowered in {"true", "false"}:
+        return lowered == "true"
+
+    if value.startswith("[") or value.startswith("{"):
+        try:
+            return json.loads(value)
+        except json.JSONDecodeError:
+            return value
+
+    return value
+
+
+def format_frontmatter_value(value):
+    """格式化 frontmatter 值。"""
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if isinstance(value, (list, dict)):
+        return json.dumps(value, ensure_ascii=False)
+    return str(value)
+
+
+def build_frontmatter_block(fm_dict: dict) -> str:
+    """生成 frontmatter 文本。"""
+    lines = ["---"]
+    for key, value in fm_dict.items():
+        lines.append(f"{key}: {format_frontmatter_value(value)}")
+    lines.append("---")
+    return "\n".join(lines)
+
+
+def strip_related_section(content: str) -> str:
+    """移除正文末尾的相关笔记块。"""
+    return re_sub_related_section(content).rstrip()
+
+
+def re_sub_related_section(content: str) -> str:
+    import re
+    return re.sub(r'\n---\n## 相关笔记\n.*$', '', content, flags=re.DOTALL)
+
+
+def is_truthy_frontmatter_value(value) -> bool:
+    """判断 frontmatter 标记是否表示启用。"""
+    if isinstance(value, bool):
+        return value
+    if value is None:
+        return False
+    return str(value).strip().strip('"\'').lower() in {"true", "yes", "1", "on"}
+
+
+def should_exclude_from_index(path, content: str | None = None, exclusions: dict | None = None) -> bool:
+    """判断路径/内容是否应排除在 QA/索引之外。"""
+    exclusions = exclusions or load_index_exclusions()
+    rel_path = normalize_vault_path(path)
+    parts = rel_path.split("/")
+
+    if any(part in set(exclusions.get("directories", [])) for part in parts):
+        return True
+
+    if rel_path in set(exclusions.get("files", [])) or Path(rel_path).name in set(exclusions.get("files", [])):
+        return True
+
+    for prefix in exclusions.get("path_prefixes", []):
+        if rel_path == prefix or rel_path.startswith(f"{prefix.rstrip('/')}/"):
+            return True
+
+    if content:
+        fm, _ = parse_frontmatter_block(content)
+        for flag in exclusions.get("frontmatter_flags", []):
+            if is_truthy_frontmatter_value(fm.get(flag)):
+                return True
+
+    return False
 
 
 def normalize_api_url(url, provider):
@@ -150,11 +306,12 @@ def find_similar_notes(content: str, existing_notes: list, limit: int = 3, thres
     if not existing_notes:
         return []
 
-    # 收集所有笔记名称
+    # 收集所有笔记名称和可用于 embedding 的文本
     note_names = [n["name"] for n in existing_notes]
+    note_texts = [build_note_embedding_text(n) for n in existing_notes]
 
     # 批量获取嵌入向量
-    all_texts = [content] + note_names
+    all_texts = [content] + note_texts
     try:
         embeddings = get_embeddings(all_texts)
     except Exception:
@@ -173,6 +330,30 @@ def find_similar_notes(content: str, existing_notes: list, limit: int = 3, thres
     # 排序返回
     similarities.sort(key=lambda x: x[1], reverse=True)
     return similarities[:limit]
+
+
+def build_note_embedding_text(note: dict, max_length: int = 1500) -> str:
+    """构造笔记相似度检测的 embedding 文本。"""
+    parts = [note.get("name", "")]
+
+    if note.get("summary"):
+        parts.append(str(note["summary"]))
+
+    note_content = note.get("content")
+    if note_content is None and note.get("path"):
+        note_path = VAULT_ROOT / note["path"]
+        try:
+            note_content = note_path.read_text(encoding="utf-8")
+        except Exception:
+            note_content = ""
+
+    if note_content:
+        fm, body = parse_frontmatter_block(str(note_content))
+        if fm.get("summary"):
+            parts.append(str(fm["summary"]))
+        parts.append(strip_related_section(body)[:max_length])
+
+    return "\n".join(p for p in parts if p).strip()
 
 
 def assess_content_quality(content: str) -> dict:

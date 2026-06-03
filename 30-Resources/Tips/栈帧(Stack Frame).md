@@ -47,11 +47,12 @@ esp
 将上⼀个栈帧底部位置恢复到  ebp pop ebp
 弹出当前栈顶元素 , 从栈中取到返回地址 , 并跳转到该位置  ret
 程序员的⾃我修养 — 链接、装载与库 . 第 10 章
+
+```yaml
 https://www.cnblogs.com/dwlsxj/p/Stack.html
+```
+
 汇编原理
-1.
-2.
-3.
 
 ---
 ## 相关笔记

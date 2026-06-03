@@ -15,67 +15,81 @@ Post http
 * @param urlStr5
 * @param reqData6
 * @return7
-*/ 8
-private String getPost(String urlStr, String reqData) { 9
-OutputStream out = null; 10
-String respData = ""; 11
-try { 12
-URL url = new URL(urlStr); 13
-HttpURLConnection con; 14
-con = (HttpURLConnection) url.openConnection(); 15
-con.setDoOutput(true); 16
-con.setDoInput(true); 17
-con.setRequestMethod("POST"); 18
-con.setUseCaches(false); 19
+*/ 8
+private String getPost(String urlStr, String reqData) { 9
+
+```java
+OutputStream out = null;
+String respData = "";
+try {
+URL url = new URL(urlStr);
+HttpURLConnection con;
+con = (HttpURLConnection) url.openConnection();
+con.setDoOutput(true);
+con.setDoInput(true);
+con.setRequestMethod("POST");
+con.setUseCaches(false);
 con.setRequestProperty("Content-type", "text/xml;
 charset=UTF-8");
-20
-con.setRequestProperty("Encoding", "UTF-8"); 21
-out = con.getOutputStream(); 22
-con.getOutputStream().write(reqData.getBytes()); 23
-out.flush(); 24
-out.close(); 25
-int code = con.getResponseCode(); 26
-String tempString = null; 27
-StringBuffer sb1 = new StringBuffer(); 28
-if (code == HttpURLConnection.HTTP_OK) { 29
-BufferedReader reader = new BufferedReader( 30
+con.setRequestProperty("Encoding", "UTF-8");
+out = con.getOutputStream();
+con.getOutputStream().write(reqData.getBytes());
+out.flush();
+out.close();
+int code = con.getResponseCode();
+String tempString = null;
+StringBuffer sb1 = new StringBuffer();
+if (code == HttpURLConnection.HTTP_OK) {
+BufferedReader reader = new BufferedReader(
 new
 InputStreamReader(con.getInputStream(), "UTF-8"));
-31
 while ((tempString = reader.readLine()) != null)
 {
-32
-sb1.append(tempString); 33
-} 34
-if (null != reader) { 35
-reader.close(); 36
-} 37
+sb1.append(tempString);
+}
+if (null != reader) {
+reader.close();
+}
+```
 
-} else { 38
-BufferedReader reader = new BufferedReader( 39
+```java
+} else {
+BufferedReader reader = new BufferedReader(
 new
 InputStreamReader(con.getErrorStream(), "UTF-8"));
-40
-// ⼀次读⼊⼀⾏，直到读⼊ null 为⽂件结束 41
+```
+
+// ⼀次读⼊⼀⾏，直到读⼊ null 为⽂件结束 41
+
+```
 while ((tempString = reader.readLine()) != null)
 {
-42
-sb1.append(tempString); 43
-} 44
-if (null != reader) { 45
-reader.close(); 46
-} 47
-} 48
-// 响应报⽂ 49
-respData = sb1.toString(); 50
-} catch (Exception e) { 51
-logger.error("getPost 执⾏异常 ", e); 52
-} 53
-return respData; 54
-}55
+sb1.append(tempString);
+}
+if (null != reader) {
+reader.close();
+}
+}
+```
 
+// 响应报⽂ 49
+
+```yaml
+respData = sb1.toString();
+} catch (Exception e) {
+```
+
+logger.error("getPost 执⾏异常 ", e); 52
+
+```java
+}
+return respData;
+}
+```
 
 ---
 ## 相关笔记
+- [[SpringCloud]]
+- [[油单信息接口]]
+- [[JAVA并发编程实战]]
 - [[SpringBoot学习笔记]]
